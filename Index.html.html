@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customer Data Manager</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      background: #121212;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 30px;
+    }
+    .wrapper {
+      display: flex;
+      gap: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+    .form-box, .preview-box {
+      background: #1e1e1e;
+      border-radius: 10px;
+      padding: 20px;
+      flex: 1;
+      box-shadow: 0 0 15px rgba(255,255,255,0.1);
+    }
+    .form-box h2, .preview-box h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .input-group input {
+      flex: 1;
+      padding: 10px;
+      border-radius: 5px;
+      font-size: 16px;
+      border: none;
+    }
+    .form-box button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #61dafb;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .preview-box #entryArea {
+      min-height: 200px;
+      border: 2px solid #333;
+      border-radius: 10px;
+      padding: 15px;
+      background: #111;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+    .entry-item {
+      background: #2c2c2c;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      position: relative;
+    }
+    .entry-item span {
+      display: block;
+    }
+    .entry-actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+    }
+    .entry-actions button {
+      padding: 4px 8px;
+      font-size: 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .entry-actions .edit {
+      background: #ffa500;
+      color: #000;
+    }
+    .entry-actions .delete {
+      background: red;
+      color: #fff;
+    }
+    .preview-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 15px;
+      justify-content: flex-end;
+    }
+    .preview-actions button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background: #61dafb;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <!-- Form Section -->
+    <div class="form-box">
+      <h2>🔧 Add Customer Data</h2>
+      <div class="input-group">
+        <input type="text" id="headingInput" placeholder="Heading (e.g. Name)">
+        <input type="text" id="answerInput" placeholder="Answer (e.g. Akash)">
+      </div>
+      <button onclick="addEntry()">➕ Add Entry</button>
+    </div>
+
+    <!-- Preview Section -->
+    <div class="preview-box">
+      <h2>📄 Preview</h2>
+      <div id="entryArea"></div>
+      <div class="preview-actions">
+        <button onclick="printList()">🖨️ Print</button>
+        <button onclick="saveAsPDF()">📥 Save as PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const entryArea = document.getElementById("entryArea");
+    let entries = [];
+
+    function addEntry() {
+      const h = document.getElementById("headingInput").value.trim();
+      const a = document.getElementById("answerInput").value.trim();
+      if (!h || !a) return;
+      entries.push({ heading: h, answer: a });
+      renderEntries();
+      document.getElementById("headingInput").value = "";
+      document.getElementById("answerInput").value = "";
+    }
+
+    function renderEntries() {
+      entryArea.innerHTML = '';
+      entries.forEach((e, i) => {
+        const div = document.createElement("div");
+        div.className = "entry-item";
+        div.innerHTML = `
+          <span><strong>${e.heading}</strong>: ${e.answer}</span>
+          <div class="entry-actions">
+            <button class="edit" onclick="editEntry(${i})">Edit</button>
+            <button class="delete" onclick="deleteEntry(${i})">Delete</button>
+          </div>`;
+        entryArea.appendChild(div);
+      });
+    }
+
+    function editEntry(i) {
+      const h = prompt("Edit Heading:", entries[i].heading);
+      const a = prompt("Edit Answer:", entries[i].answer);
+      if (h && a) {
+        entries[i] = { heading: h, answer: a };
+        renderEntries();
+      }
+    }
+
+    function deleteEntry(i) {
+      entries.splice(i,1);
+      renderEntries();
+    }
+
+    function printList() {
+      const w = window.open('', '', 'width=800,height=600');
+      w.document.write('<html><head><title>Print</title></head><body style="font-family:Arial;padding:20px;">');
+      w.document.write('<h2>Customer Data</h2><ul>');
+      entries.forEach(e => w.document.write(`<li><strong>${e.heading}</strong>: ${e.answer}</li>`));
+      w.document.write('</ul></body></html>');
+      w.document.close();
+      w.print();
+    }
+
+    function saveAsPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      let y = 40;
+      doc.setFontSize(22);
+      doc.setTextColor(30,30,30);
+      doc.text(" Customer Data Report", 40, y);
+      y += 20;
+      doc.setLineWidth(1);
+      doc.line(40, y, 555, y);
+      y += 30;
+
+      entries.forEach((e, i) => {
+        if (y > 750) {
+          doc.addPage();
+          y = 40;
+        }
+        doc.setFillColor(245,245,245);
+        doc.roundedRect(40, y - 6, 515, 20, 4, 4, 'F');
+        doc.setFontSize(14);
+        doc.setTextColor(20,20,20);
+        doc.text(`${i+1}. ${e.heading}: ${e.answer}`, 50, y + 8);
+        y += 30;
+      });
+
+      doc.save("CustomerDataReport.pdf");
+    }
+  </script>
+</body>
+</html>
